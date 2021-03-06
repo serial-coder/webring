@@ -31,15 +31,13 @@ const siteFetcherInstanceBase = encrypted(`
     delete data.number
   })
 
+  const screenshotUpdates = []
   for (const site of sites) {
     const data = db[site.id] || {}
     console.log(site.id)
     try {
       if (data.url !== site.url) {
         data.url = site.url
-      }
-      if (data.number !== site.number) {
-        data.number = site.number
       }
       if (
         !data.lastUpdated ||
@@ -65,18 +63,26 @@ const siteFetcherInstanceBase = encrypted(`
           data.mobileImageUrlV2 = `https://wonderfulsoftware.github.io/webring-site-screenshots/${imageBasename}`
           data.blurhash = fetchResult.blurhash
           data.screenshotUpdatedAt = new Date().toJSON()
+          screenshotUpdates.push(site.id)
         }
         data.description = fetchResult.description
         data.backlink = fetchResult.backlink
         data.lastUpdated = new Date().toJSON()
         console.log(data)
       }
+      if (data.number !== site.number) {
+        data.number = site.number
+      }
     } catch (e) {
       console.error(site.id, e)
     }
     db[site.id] = data
   }
-
+  fs.writeFileSync(
+    "tmp/webring-site-screenshots-commit-message",
+    "Update screenshots of " + screenshotUpdates.join(", ")
+  )
+  fs.writeFileSync("tmp/webring-site-data-commit-message", "Update site data")
   fs.writeFileSync(
     "tmp/webring-site-data/data.json",
     JSON.stringify(db, null, 2)
